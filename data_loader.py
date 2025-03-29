@@ -11,8 +11,3 @@ def action_costs(json_file_path: str = "data/cost.json") -> dict:
     
     return cost
 
-
-if __name__ == "__main__":
-
-    costs = action_costs()
-    print({costs['Feather']})
