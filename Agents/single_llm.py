@@ -13,7 +13,7 @@ class SingleLLM:
         system_prompt = """You're playing a strategy game where you must counter system-generated words while minimizing costs over 5 rounds.
 Rules:
 1. System provides a word each round
-2. Choose a word that logically "beats" the system's word
+2. Choose a word from the list that logically "beats" the system's word (the system's word is not in the list)
 3. Words have costs ($) - stronger words cost more
 4. Failed counters incur a $30 penalty plus the word's cost
 5. Goal: Spend as little as possible across 5 rounds
@@ -81,14 +81,10 @@ Word List and Costs:
 60. Entropy ($45)
 
 You are player {player_id}
-
 Last round history:
 {last_round_history}
-
 Total spent: {total_spent} ,  you try to spend as less as possible.
-
 Given word: {word}
-
 Return only the word from the word list that beats the given word in this format: word
 """
         self.prompt = ChatPromptTemplate.from_template(
