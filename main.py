@@ -5,6 +5,7 @@ import argparse
 from agents.random_agent import RandomAgent
 from agents.single_llm import SingleLLM
 from agents.structured_llm import StructuredLLM
+from agents.gemma_optimized import GemmaOptimized
 import json
 import signal
 from contextlib import contextmanager
@@ -137,13 +138,14 @@ def play_game(agent, player_id, player_type):
         print(f'Word cost: {choosen_word_cost}')
         
         data = {"player_id": player_id, "word_id": word_id, "round_id": round_id}
+        print(f'Round {round_id} data: {data}')
         response = requests.post(post_url, json=data)
         print(f'Round {round_id} response: {response.json()}')
         
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--player_id", type=str, required=True)
-    parser.add_argument("--agent", type=str, required=True, choices=["random", "single_llm", "structured_llm"])
+    parser.add_argument("--agent", type=str, required=True, choices=["random", "single_llm", "structured_llm", "gemma_optimized"])
     parser.add_argument("--player_type", type=str, required=True, choices=["p1", "p2"])
     args = parser.parse_args()
     
@@ -153,6 +155,8 @@ def main():
         agent = SingleLLM(args.player_id)
     elif args.agent == "structured_llm":
         agent = StructuredLLM(args.player_id)
+    elif args.agent == "gemma_optimized":
+        agent = GemmaOptimized(args.player_id)
     
     play_game(agent, args.player_id, args.player_type)
 

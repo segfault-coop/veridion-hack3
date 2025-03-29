@@ -8,7 +8,7 @@ class WordUsed(BaseModel):
 class SingleLLM:
     def __init__(self, player_id):
         self.player_id = player_id
-        self.llm = OllamaLLM(model="gemma3:latest", temperature=0.5)
+        self.llm = OllamaLLM(model="gemma3:latest", temperature=0.7)
         self.actions_costs = []
         system_prompt = """You're playing a strategy game where you must counter system-generated words while minimizing costs over 5 rounds.
 Rules:
