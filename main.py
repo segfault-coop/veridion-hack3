@@ -4,8 +4,15 @@ import random
 import argparse
 from agents.random_agent import RandomAgent
 from agents.single_llm import SingleLLM
+from agents.structured_llm import StructuredLLM
 import json
+import signal
+from contextlib import contextmanager
+import time
+
 host = "http://172.18.4.158:8000"
+# host = "http://172.18.4.145:8000"
+
 post_url = f"{host}/submit-word"
 get_url = f"{host}/get-word"
 status_url = f"{host}/status"
@@ -31,6 +38,24 @@ p2_history = {
 word_list = []
 with open("data/cost.json", "r") as f:
     word_list = json.load(f)
+
+class TimeoutException(Exception):
+    pass
+
+@contextmanager
+def timeout(seconds):
+    def timeout_handler(signum, frame):
+        raise TimeoutException("Response timeout")
+
+    # Register the signal function handler
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(seconds)
+    
+    try:
+        yield
+    finally:
+        # Disable the alarm
+        signal.alarm(0)
 
 def play_game(agent, player_id):
     for round_id in range(1, NUM_ROUNDS+1):
@@ -64,16 +89,44 @@ def play_game(agent, player_id):
             print(f'P1 history: {p1_history}')
             print(f'P2 history: {p2_history}')
             
-            print(status.json())
+            print(status)
             
-        total_history = f'P1 history: {p1_history}\nP2 history: {p2_history}'
+        history_dict = {
+            'P1 history': p1_history,
+            'P2 history': p2_history
+        }
+        # Format the history data in a more readable way
+        total_history = (
+            f"P1 history:\n"
+            f"  Words given: {p1_history['word_given']}\n"
+            f"  Words used: {p1_history['word_used']}\n"
+            f"  Costs: {p1_history['cost']}\n"
+            f"  Total spent: ${p1_history['total_spent']}\n"
+            f"  Wins: {p1_history['wins']}\n\n"
+            f"P2 history:\n"
+            f"  Words given: {p2_history['word_given']}\n"
+            f"  Words used: {p2_history['word_used']}\n"
+            f"  Costs: {p2_history['cost']}\n"
+            f"  Total spent: ${p2_history['total_spent']}\n"
+            f"  Wins: {p2_history['wins']}"
+        )
         print(f'System word: {sys_word}')
         if player_id == "p1":
             total_spent = p1_history["total_spent"]
         else:
             total_spent = p2_history["total_spent"]
             
-        choosen_word = agent.action(sys_word, total_history, total_spent, player_id)
+        try:
+            with timeout(5):
+                choosen_word = agent.action(sys_word, total_history, total_spent, player_id)
+        except TimeoutException:
+            print("Response timed out, using fallback word")
+            # Use cheapest words as fallback
+            choosen_word = "Feather"  # $1 cost
+        except Exception as e:
+            print(f"Error occurred: {e}, using fallback word")
+            choosen_word = "Feather"
+            
         print(f'Choosen word: {choosen_word}')
         choosen_word = choosen_word.strip()
         word_id = int(word_list[choosen_word]["id"])
@@ -90,7 +143,7 @@ def play_game(agent, player_id):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--player_id", type=str, required=True)
-    parser.add_argument("--agent", type=str, required=True, choices=["random", "single_llm"])
+    parser.add_argument("--agent", type=str, required=True, choices=["random", "single_llm", "structured_llm"])
     parser.add_argument("--player_type", type=str, required=True, choices=["p1", "p2"])
     args = parser.parse_args()
     
@@ -98,6 +151,8 @@ def main():
         agent = RandomAgent(args.player_id)
     elif args.agent == "single_llm":
         agent = SingleLLM(args.player_id)
+    elif args.agent == "structured_llm":
+        agent = StructuredLLM(args.player_id)
     
     play_game(agent, args.player_id)
 
