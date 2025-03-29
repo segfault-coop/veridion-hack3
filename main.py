@@ -57,7 +57,7 @@ def timeout(seconds):
         # Disable the alarm
         signal.alarm(0)
 
-def play_game(agent, player_id):
+def play_game(agent, player_id, player_type):
     for round_id in range(1, NUM_ROUNDS+1):
         print(f'******* Round {round_id} ***********')
         round_num = -1
@@ -111,7 +111,7 @@ def play_game(agent, player_id):
             f"  Wins: {p2_history['wins']}"
         )
         print(f'System word: {sys_word}')
-        if player_id == "p1":
+        if player_type == "p1":
             total_spent = p1_history["total_spent"]
         else:
             total_spent = p2_history["total_spent"]
@@ -154,7 +154,7 @@ def main():
     elif args.agent == "structured_llm":
         agent = StructuredLLM(args.player_id)
     
-    play_game(agent, args.player_id)
+    play_game(agent, args.player_id, args.player_type)
 
 if __name__ == "__main__":
     main()
